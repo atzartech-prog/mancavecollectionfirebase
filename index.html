@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koleksi Mancaveku - Personal Mancave Showcase</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-theme">
+
+  <!-- ================= AUTH CONTAINER ================= -->
+  <div id="auth-container" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="logo-icon">
+          <i class="fa-solid fa-gamepad"></i>
+        </div>
+        <h1>Mancave<span>ku</span></h1>
+        <p>Your Ultimate Collection Registry</p>
+      </div>
+
+      <!-- Tab Buttons -->
+      <div class="auth-tabs">
+        <button id="tab-login" class="auth-tab active" onclick="switchAuthTab('login')">Log In</button>
+        <button id="tab-register" class="auth-tab" onclick="switchAuthTab('register')">Sign Up</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="auth-form active">
+        <div class="form-group">
+          <label for="login-email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+          <input type="email" id="login-email" placeholder="enter your registered email" required>
+        </div>
+        <div class="form-group">
+          <label for="login-password"><i class="fa-solid fa-lock"></i> Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <span>Log In</span> <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        </button>
+        <div class="auth-hint">
+          <p><i class="fa-solid fa-info-circle"></i> Use your pre-configured Firebase Auth email.</p>
+        </div>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="auth-form">
+        <div class="form-group">
+          <label for="register-email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+          <input type="email" id="register-email" placeholder="example@mancave.com" required>
+        </div>
+        <div class="form-group">
+          <label for="register-password"><i class="fa-solid fa-lock"></i> Password</label>
+          <input type="password" id="register-password" placeholder="Min. 6 characters" required>
+        </div>
+        <div class="form-group">
+          <label for="register-confirm-password"><i class="fa-solid fa-shield"></i> Confirm Password</label>
+          <input type="password" id="register-confirm-password" placeholder="Repeat password" required>
+        </div>
+        <button type="submit" class="btn btn-secondary btn-block">
+          <span>Sign Up</span> <i class="fa-solid fa-user-plus"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= APP CONTAINER ================= -->
+  <div id="app-container" class="app-wrapper" style="display: none;">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="fa-solid fa-cubes-stacked text-gradient"></i>
+          <h2>Mancave<span>ku</span></h2>
+        </div>
+        <button class="mobile-close-btn" id="sidebar-close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="user-profile-summary">
+        <div class="user-avatar">
+          <i class="fa-solid fa-user-astronaut"></i>
+        </div>
+        <div class="user-info">
+          <span class="user-welcome">Collector</span>
+          <span id="user-email-display" class="user-email">loading...</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="#" id="nav-dashboard" class="nav-link active" onclick="navigateTo('dashboard')">
+              <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" id="nav-categories" class="nav-link" onclick="navigateTo('categories')">
+              <i class="fa-solid fa-tags"></i> <span>Categories</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" id="nav-items" class="nav-link" onclick="navigateTo('items')">
+              <i class="fa-solid fa-gamepad"></i> <span>My Collections</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn-logout" id="btn-logout-action">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Log Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navbar -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="mobile-toggle" id="sidebar-toggle"><i class="fa-solid fa-bars"></i></button>
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary btn-sm" onclick="openAddItemModal()">
+            <i class="fa-solid fa-plus"></i> <span>Add Item</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="content-body">
+        
+        <!-- === SECTION: DASHBOARD === -->
+        <section id="section-dashboard" class="app-section active">
+          <!-- Stats Summary Grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon category-color">
+                <i class="fa-solid fa-tags"></i>
+              </div>
+              <div class="stat-details">
+                <h3 id="stat-total-categories">0</h3>
+                <p>Categories</p>
+              </div>
+              <div class="stat-bg-decoration"><i class="fa-solid fa-tags"></i></div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon items-color">
+                <i class="fa-solid fa-gamepad"></i>
+              </div>
+              <div class="stat-details">
+                <h3 id="stat-total-items">0</h3>
+                <p>Total Items</p>
+              </div>
+              <div class="stat-bg-decoration"><i class="fa-solid fa-gamepad"></i></div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon value-color">
+                <i class="fa-solid fa-coins"></i>
+              </div>
+              <div class="stat-details">
+                <h3 id="stat-total-value">Rp 0</h3>
+                <p>Total Valuation</p>
+              </div>
+              <div class="stat-bg-decoration"><i class="fa-solid fa-coins"></i></div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon wishlist-color">
+                <i class="fa-solid fa-heart"></i>
+              </div>
+              <div class="stat-details">
+                <h3 id="stat-wishlist-count">0</h3>
+                <p>Wishlist Items</p>
+              </div>
+              <div class="stat-bg-decoration"><i class="fa-solid fa-heart"></i></div>
+            </div>
+          </div>
+
+          <!-- Charts and Recents Row -->
+          <div class="dashboard-row">
+            <div class="dashboard-col col-7">
+              <div class="card card-table">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-clock-rotate-left"></i> Recently Added Collections</h3>
+                  <a href="#" class="view-all-link" onclick="navigateTo('items')">View All</a>
+                </div>
+                <div class="card-body scrollable-y">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Purchase Value</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recent-items-tbody">
+                      <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">No items in database. Add some!</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <div class="dashboard-col col-5">
+              <div class="card card-chart">
+                <div class="card-header">
+                  <h3><i class="fa-solid fa-chart-pie"></i> Category Distribution</h3>
+                </div>
+                <div class="card-body flex-center">
+                  <div class="chart-wrapper">
+                    <canvas id="categoryChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- === SECTION: CATEGORIES === -->
+        <section id="section-categories" class="app-section">
+          <div class="section-actions-row">
+            <p class="section-desc">Organize your mancave items into separate collections (e.g. Action Figures, Console, PC Parts, Hotwheels).</p>
+            <button class="btn btn-secondary" onclick="openAddCategoryModal()">
+              <i class="fa-solid fa-plus-circle"></i> Create Category
+            </button>
+          </div>
+          
+          <div class="categories-grid" id="categories-list">
+            <!-- Dynamically populated category cards -->
+            <div class="loading-state">
+              <i class="fa-solid fa-spinner fa-spin"></i> Loading categories...
+            </div>
+          </div>
+        </section>
+
+        <!-- === SECTION: MY COLLECTIONS === -->
+        <section id="section-items" class="app-section">
+          <!-- Filters & Actions Bar -->
+          <div class="filter-bar">
+            <div class="search-input-wrapper">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="search-box" placeholder="Search item, brand, model..." oninput="filterItems()">
+            </div>
+            
+            <div class="filter-controls">
+              <div class="select-wrapper">
+                <select id="filter-category" onchange="filterItems()">
+                  <option value="">All Categories</option>
+                  <!-- Categories filled dynamically -->
+                </select>
+              </div>
+
+              <div class="select-wrapper">
+                <select id="filter-status" onchange="filterItems()">
+                  <option value="">All Status</option>
+                  <option value="Displayed">Displayed</option>
+                  <option value="Boxed">Mint in Box</option>
+                  <option value="Used">In Use</option>
+                  <option value="Wishlist">Wishlist</option>
+                </select>
+              </div>
+
+              <div class="select-wrapper">
+                <select id="sort-by" onchange="filterItems()">
+                  <option value="createdAt-desc">Newest Added</option>
+                  <option value="createdAt-asc">Oldest Added</option>
+                  <option value="name-asc">Alphabetical A-Z</option>
+                  <option value="price-desc">Highest Price</option>
+                  <option value="price-asc">Lowest Price</option>
+                  <option value="rating-desc">Highest Rating</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="items-grid" id="items-list">
+            <!-- Dynamically populated item cards -->
+            <div class="loading-state">
+              <i class="fa-solid fa-spinner fa-spin"></i> Loading items...
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 1. Category Modal (Create / Edit) -->
+  <div id="category-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="category-modal-title">Create Category</h3>
+        <button class="modal-close" onclick="closeModal('category-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="category-form">
+        <input type="hidden" id="category-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="category-name">Category Name *</label>
+            <input type="text" id="category-name" placeholder="e.g. Action Figures, Gadgets" required>
+          </div>
+          <div class="form-group">
+            <label for="category-icon">Category Icon (Emoji / Symbol) *</label>
+            <div class="icon-selector-wrapper">
+              <input type="text" id="category-icon" placeholder="🤖, 🎮, 💻, 🚗" required>
+              <span class="hint">Use a single emoji to represent this category!</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="category-desc">Description</label>
+            <textarea id="category-desc" rows="3" placeholder="Brief description of this collection segment..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-link" onclick="closeModal('category-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Item Modal (Create / Edit) -->
+  <div id="item-modal" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 id="item-modal-title">Add Collection Item</h3>
+        <button class="modal-close" onclick="closeModal('item-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="item-form">
+        <input type="hidden" id="item-id">
+        <div class="modal-body">
+          <div class="modal-grid-2">
+            <div class="form-group">
+              <label for="item-name">Item Name *</label>
+              <input type="text" id="item-name" placeholder="e.g. Iron Mark 85 Hottoys, PS5 Slim" required>
+            </div>
+            <div class="form-group">
+              <label for="item-brand">Brand / Manufacturer</label>
+              <input type="text" id="item-brand" placeholder="e.g. Sony, Hasbro, LEGO, Custom">
+            </div>
+          </div>
+
+          <div class="modal-grid-3">
+            <div class="form-group">
+              <label for="item-category">Category *</label>
+              <div class="select-wrapper">
+                <select id="item-category" required>
+                  <option value="" disabled selected>Select Category</option>
+                  <!-- Categories options filled dynamically -->
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="item-status">Status *</label>
+              <div class="select-wrapper">
+                <select id="item-status" required>
+                  <option value="Displayed">Displayed</option>
+                  <option value="Boxed">Mint in Box</option>
+                  <option value="Used">In Use</option>
+                  <option value="Wishlist">Wishlist</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="item-price">Purchase Price (IDR)</label>
+              <input type="number" id="item-price" min="0" placeholder="e.g. 1500000">
+            </div>
+          </div>
+
+          <div class="modal-grid-2">
+            <div class="form-group">
+              <label for="item-purchase-date">Purchase Date</label>
+              <input type="date" id="item-purchase-date">
+            </div>
+            <div class="form-group">
+              <label>Rating / Satisfaction</label>
+              <div class="rating-stars-input">
+                <input type="radio" name="item-rating" id="star-5" value="5"><label for="star-5"><i class="fa-solid fa-star"></i></label>
+                <input type="radio" name="item-rating" id="star-4" value="4"><label for="star-4"><i class="fa-solid fa-star"></i></label>
+                <input type="radio" name="item-rating" id="star-3" value="3"><label for="star-3"><i class="fa-solid fa-star"></i></label>
+                <input type="radio" name="item-rating" id="star-2" value="2"><label for="star-2"><i class="fa-solid fa-star"></i></label>
+                <input type="radio" name="item-rating" id="star-1" value="1"><label for="star-1"><i class="fa-solid fa-star"></i></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="item-image-url">Image URL</label>
+            <div class="image-input-helper">
+              <input type="url" id="item-image-url" placeholder="https://example.com/image.jpg">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="generatePlaceholderImage()">Auto Preset</button>
+            </div>
+            <span class="hint">Paste an image URL, or click "Auto Preset" to generate a placeholder picture based on category.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="item-notes">Notes / Specifications</label>
+            <textarea id="item-notes" rows="3" placeholder="Condition details, modifications, accessories included..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-link" onclick="closeModal('item-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Item Detail Modal -->
+  <div id="detail-modal" class="modal-overlay">
+    <div class="modal-card modal-detail">
+      <div class="modal-header">
+        <h3>Collection Details</h3>
+        <button class="modal-close" onclick="closeModal('detail-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="detail-modal-body">
+        <!-- Dynamically rendered detail card -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FIREBASE & APP LOGIC ================= -->
+  
+  <!-- Firebase Compat App -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <!-- Firebase Compat Auth -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <!-- Firebase Compat Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <!-- ChartJS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- Main Script -->
+  <script src="js/app.js"></script>
+</body>
+</html>
