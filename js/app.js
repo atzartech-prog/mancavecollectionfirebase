@@ -194,7 +194,7 @@ function initializeDataRealtime() {
       updateDashboardChart();
     }, (error) => {
       console.error("Error loading items:", error);
-      showToast('error', 'Failed to fetch collections.');
+      showToast('error', 'Failed to fetch collections: ' + error.message);
     });
 }
 
@@ -504,7 +504,14 @@ document.getElementById('item-form').addEventListener('submit', async (e) => {
     closeModal('item-modal');
   } catch (error) {
     console.error("Error saving item:", error);
-    showToast('error', 'Error saving item. Try again.');
+    Swal.fire({
+      icon: 'error',
+      title: 'Failed to Save Item',
+      text: error.message || 'An unexpected error occurred.',
+      background: '#0b1320',
+      color: '#f1f5f9',
+      confirmButtonColor: '#00f2fe'
+    });
   }
 });
 
