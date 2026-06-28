@@ -269,11 +269,20 @@ function updateCategoriesUI() {
   const container = document.getElementById('categories-list');
   if (!container) return;
 
+  const btnSeed = document.getElementById('btn-seed-categories');
+  if (btnSeed) {
+    if (categoriesList.length === 0) {
+      btnSeed.style.display = 'inline-flex';
+    } else {
+      btnSeed.style.display = 'none';
+    }
+  }
+
   if (categoriesList.length === 0) {
     container.innerHTML = `
       <div class="loading-state">
         <i class="fa-solid fa-tags"></i>
-        <p>No categories created. Create one to classify your Mancave items!</p>
+        <p>No categories created. Seed default categories or create one to classify your Mancave items!</p>
       </div>
     `;
     return;
@@ -327,9 +336,28 @@ function updateCategoriesSelectOptions() {
   filterCategorySelect.innerHTML = filterOptionsHTML;
 }
 
+function selectPickerEmoji(emoji) {
+  document.getElementById('category-icon').value = emoji;
+  document.getElementById('selected-emoji-val').textContent = emoji;
+  
+  // Highlight the selected item in the picker
+  const pickerItems = document.querySelectorAll('.emoji-picker-item');
+  pickerItems.forEach(item => {
+    if (item.textContent === emoji) {
+      item.classList.add('selected');
+    } else {
+      item.classList.remove('selected');
+    }
+  });
+}
+
 function openAddCategoryModal() {
   document.getElementById('category-id').value = '';
   document.getElementById('category-form').reset();
+  
+  // Reset emoji selection to box
+  selectPickerEmoji('📦');
+  
   document.getElementById('category-modal-title').textContent = 'Create Category';
   openModal('category-modal');
 }
@@ -340,8 +368,10 @@ function openEditCategoryModal(id) {
 
   document.getElementById('category-id').value = category.id;
   document.getElementById('category-name').value = category.name;
-  document.getElementById('category-icon').value = category.icon;
   document.getElementById('category-desc').value = category.description || '';
+  
+  // Set selected emoji
+  selectPickerEmoji(category.icon || '📦');
   
   document.getElementById('category-modal-title').textContent = 'Edit Category';
   openModal('category-modal');
@@ -382,6 +412,73 @@ document.getElementById('category-form').addEventListener('submit', async (e) =>
     showToast('error', 'Error saving category. Try again.');
   }
 });
+
+// Seed Default Categories
+async function seedDefaultCategories() {
+  if (!currentUser) return;
+
+  const defaultCategories = [
+    { name: "Gadget Lama", icon: "📟", description: "Vintage gadgets, retro mobile phones, pagers, and classic handhelds." },
+    { name: "Keyboard", icon: "⌨️", description: "Mechanical keyboards, custom keycap sets, and build accessories." },
+    { name: "Mini PC", icon: "🔌", description: "Compact desktop rigs, Intel NUCs, and Raspberry Pi setups." },
+    { name: "PC", icon: "💻", description: "Primary gaming setups, personal rigs, monitors, and specs." },
+    { name: "Mainan", icon: "🧸", description: "General toy collections, board games, Lego builds, and ornaments." },
+    { name: "Figure", icon: "🤖", description: "Action figures, anime scale models, and Gundam kits." },
+    { name: "Buku", icon: "📚", description: "Physical reading books, novels, mangas, and reference collections." },
+    { name: "Ebook", icon: "📖", description: "Digital library: PDF guides, documentation, and references." },
+    { name: "E-reader", icon: "📱", description: "Electronic reading hardware like Kindle, Kobo, or e-paper pads." },
+    { name: "SSD", icon: "💾", description: "Solid state drives, high-speed NVMe modules, and backup drives." },
+    { name: "Flashdisk", icon: "🔌", description: "USB flash drives, memory cards, and card-reader attachments." },
+    { name: "DVD", icon: "💿", description: "Vintage CDs, music DVD folders, and gaming installation disks." },
+    { name: "Simcard", icon: "📶", description: "Active or vintage telecom SIMs, carrier setups, and eSIM details." }
+  ];
+
+  const result = await Swal.fire({
+    title: 'Seed Default Categories?',
+    text: "This will add 13 typical Mancave categories (Gadget Lama, Keyboard, PC, Figure, SSD, etc.) to your catalog.",
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#00f2fe',
+    cancelButtonColor: 'rgba(255,255,255,0.08)',
+    background: '#0b1320',
+    color: '#f1f5f9',
+    confirmButtonText: 'Yes, seed them!'
+  });
+
+  if (result.isConfirmed) {
+    Swal.fire({
+      title: 'Seeding Categories...',
+      html: 'Populating Firestore document collections...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+      background: '#0b1320',
+      color: '#f1f5f9'
+    });
+
+    try {
+      const batch = db.batch();
+      defaultCategories.forEach(cat => {
+        const docRef = db.collection('categories').doc();
+        batch.set(docRef, {
+          ...cat,
+          userId: currentUser.uid,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+
+      await batch.commit();
+      Swal.close();
+      showToast('success', '13 default categories successfully added!');
+    } catch (error) {
+      console.error("Error seeding categories:", error);
+      Swal.close();
+      showToast('error', 'Could not complete category seeding.');
+    }
+  }
+}
 
 // Delete Category
 async function deleteCategory(id, name) {

@@ -235,9 +235,14 @@
         <section id="section-categories" class="app-section">
           <div class="section-actions-row">
             <p class="section-desc">Organize your mancave items into separate collections (e.g. Action Figures, Console, PC Parts, Hotwheels).</p>
-            <button class="btn btn-secondary" onclick="openAddCategoryModal()">
-              <i class="fa-solid fa-plus-circle"></i> Create Category
-            </button>
+            <div class="category-header-actions" style="display:flex; gap:10px;">
+              <button class="btn btn-secondary" onclick="seedDefaultCategories()" id="btn-seed-categories" style="display:none;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Seed Defaults
+              </button>
+              <button class="btn btn-primary" onclick="openAddCategoryModal()">
+                <i class="fa-solid fa-plus-circle"></i> Create Category
+              </button>
+            </div>
           </div>
           
           <div class="categories-grid" id="categories-list">
@@ -317,10 +322,32 @@
             <input type="text" id="category-name" placeholder="e.g. Action Figures, Gadgets" required>
           </div>
           <div class="form-group">
-            <label for="category-icon">Category Icon (Emoji / Symbol) *</label>
-            <div class="icon-selector-wrapper">
-              <input type="text" id="category-icon" placeholder="🤖, 🎮, 💻, 🚗" required>
-              <span class="hint">Use a single emoji to represent this category!</span>
+            <label>Choose Category Icon *</label>
+            <div class="emoji-picker-grid">
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('📟')">📟</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('⌨️')">⌨️</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('🔌')">🔌</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('💻')">💻</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('🖥️')">🖥️</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('🧸')">🧸</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('🤖')">🤖</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('📚')">📚</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('📖')">📖</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('📱')">📱</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('💾')">💾</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('💿')">💿</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('📶')">📶</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('🎮')">🎮</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('🎧')">🎧</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('📷')">📷</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('⌚')">⌚</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('🚗')">🚗</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('🛵')">🛵</span>
+              <span class="emoji-picker-item" onclick="selectPickerEmoji('📦')">📦</span>
+            </div>
+            <input type="hidden" id="category-icon" required value="📦">
+            <div class="selected-emoji-preview">
+              Selected Icon: <span id="selected-emoji-val">📦</span>
             </div>
           </div>
           <div class="form-group">
