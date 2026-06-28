@@ -172,27 +172,12 @@ document.getElementById('btn-logout-action').addEventListener('click', async () 
 });
 
 // 5. DATA INGESTION & REALTIME SUBSCRIPTION
+// 5. DATA INGESTION & REALTIME SUBSCRIPTION
 function initializeDataRealtime() {
   if (!currentUser) return;
   
-  // Realtime listener for Categories
-  categoriesUnsubscribe = db.collection('categories')
-    .where('userId', '==', currentUser.uid)
-    .onSnapshot((snapshot) => {
-      categoriesList = [];
-      snapshot.forEach((doc) => {
-        categoriesList.push({ id: doc.id, ...doc.data() });
-      });
-      // Sort alphabetically
-      categoriesList.sort((a, b) => a.name.localeCompare(b.name));
-      
-      updateCategoriesUI();
-      updateCategoriesSelectOptions();
-      updateDashboardStats();
-    }, (error) => {
-      console.error("Error loading categories:", error);
-      showToast('error', 'Failed to fetch categories.');
-    });
+  // Populate category options (from static array)
+  updateCategoriesSelectOptions();
 
   // Realtime listener for Items
   itemsUnsubscribe = db.collection('items')
@@ -264,57 +249,26 @@ if (sidebarClose) {
   });
 }
 
-// 7. CATEGORY CRUD ACTIONS
-function updateCategoriesUI() {
-  const container = document.getElementById('categories-list');
-  if (!container) return;
-
-  const btnSeed = document.getElementById('btn-seed-categories');
-  if (btnSeed) {
-    if (categoriesList.length === 0) {
-      btnSeed.style.display = 'inline-flex';
-    } else {
-      btnSeed.style.display = 'none';
-    }
-  }
-
-  if (categoriesList.length === 0) {
-    container.innerHTML = `
-      <div class="loading-state">
-        <i class="fa-solid fa-tags"></i>
-        <p>No categories created. Seed default categories or create one to classify your Mancave items!</p>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = categoriesList.map(category => {
-    // Count items under this category
-    const itemCount = itemsList.filter(item => item.categoryId === category.id).length;
-    
-    return `
-      <div class="category-card" id="cat-card-${category.id}">
-        <div class="category-card-header">
-          <div class="category-emoji">${category.icon || '📦'}</div>
-          <div class="category-controls">
-            <button class="btn-icon" title="Edit Category" onclick="openEditCategoryModal('${category.id}')">
-              <i class="fa-solid fa-pen"></i>
-            </button>
-            <button class="btn-icon btn-delete" title="Delete Category" onclick="deleteCategory('${category.id}', '${category.name}')">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          </div>
-        </div>
-        <h4>${escapeHTML(category.name)}</h4>
-        <p>${escapeHTML(category.description || 'No description provided.')}</p>
-        <div class="category-stats">
-          <span>Items Registered</span>
-          <span class="category-item-count">${itemCount}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
+// 7. CATEGORIES CONFIGURATION (STATIC & SIMPLIFIED)
+const MANCAVE_CATEGORIES = [
+  "Console Gaming",
+  "PC Gaming & Hardware",
+  "Mechanical Keyboard",
+  "Action Figure & Model Kit",
+  "Diecast & Toy Vehicles",
+  "LEGO & Building Blocks",
+  "Vintage Gadget",
+  "Audio Gear",
+  "Books, Comics & Manga",
+  "Digital Book & E-Reader",
+  "Storage Devices (SSD/FD)",
+  "Physical Media (DVD/CD)",
+  "Board Games & Cards",
+  "Smart Home & Lighting",
+  "Mancave Furnishings",
+  "Networking & Simcard",
+  "Other Collectibles"
+];
 
 function updateCategoriesSelectOptions() {
   const itemCategorySelect = document.getElementById('item-category');
@@ -327,201 +281,13 @@ function updateCategoriesSelectOptions() {
   // Options for filter row
   let filterOptionsHTML = '<option value="">All Categories</option>';
 
-  categoriesList.forEach(category => {
-    itemOptionsHTML += `<option value="${category.id}">${category.icon || '📦'} ${escapeHTML(category.name)}</option>`;
-    filterOptionsHTML += `<option value="${category.id}">${category.icon || '📦'} ${escapeHTML(category.name)}</option>`;
+  MANCAVE_CATEGORIES.forEach(cat => {
+    itemOptionsHTML += `<option value="${cat}">${escapeHTML(cat)}</option>`;
+    filterOptionsHTML += `<option value="${cat}">${escapeHTML(cat)}</option>`;
   });
 
   itemCategorySelect.innerHTML = itemOptionsHTML;
   filterCategorySelect.innerHTML = filterOptionsHTML;
-}
-
-function selectPickerEmoji(emoji) {
-  document.getElementById('category-icon').value = emoji;
-  document.getElementById('selected-emoji-val').textContent = emoji;
-  
-  // Highlight the selected item in the picker
-  const pickerItems = document.querySelectorAll('.emoji-picker-item');
-  pickerItems.forEach(item => {
-    if (item.textContent === emoji) {
-      item.classList.add('selected');
-    } else {
-      item.classList.remove('selected');
-    }
-  });
-}
-
-function openAddCategoryModal() {
-  document.getElementById('category-id').value = '';
-  document.getElementById('category-form').reset();
-  
-  // Reset emoji selection to box
-  selectPickerEmoji('📦');
-  
-  document.getElementById('category-modal-title').textContent = 'Create Category';
-  openModal('category-modal');
-}
-
-function openEditCategoryModal(id) {
-  const category = categoriesList.find(c => c.id === id);
-  if (!category) return;
-
-  document.getElementById('category-id').value = category.id;
-  document.getElementById('category-name').value = category.name;
-  document.getElementById('category-desc').value = category.description || '';
-  
-  // Set selected emoji
-  selectPickerEmoji(category.icon || '📦');
-  
-  document.getElementById('category-modal-title').textContent = 'Edit Category';
-  openModal('category-modal');
-}
-
-// Category Form Submission (Save/Update)
-document.getElementById('category-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!currentUser) return;
-
-  const id = document.getElementById('category-id').value;
-  const name = document.getElementById('category-name').value.trim();
-  const icon = document.getElementById('category-icon').value.trim();
-  const description = document.getElementById('category-desc').value.trim();
-
-  const categoryData = {
-    name,
-    icon,
-    description,
-    userId: currentUser.uid,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  try {
-    if (id) {
-      // Edit
-      await db.collection('categories').doc(id).update(categoryData);
-      showToast('success', 'Category updated successfully!');
-    } else {
-      // Create
-      categoryData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-      await db.collection('categories').add(categoryData);
-      showToast('success', 'Category created successfully!');
-    }
-    closeModal('category-modal');
-  } catch (error) {
-    console.error("Error saving category:", error);
-    showToast('error', 'Error saving category. Try again.');
-  }
-});
-
-// Seed Default Categories
-async function seedDefaultCategories() {
-  if (!currentUser) return;
-
-  const defaultCategories = [
-    { name: "Gadget Lama", icon: "📟", description: "Vintage gadgets, retro mobile phones, pagers, and classic handhelds." },
-    { name: "Keyboard", icon: "⌨️", description: "Mechanical keyboards, custom keycap sets, and build accessories." },
-    { name: "Mini PC", icon: "🔌", description: "Compact desktop rigs, Intel NUCs, and Raspberry Pi setups." },
-    { name: "PC", icon: "💻", description: "Primary gaming setups, personal rigs, monitors, and specs." },
-    { name: "Mainan", icon: "🧸", description: "General toy collections, board games, Lego builds, and ornaments." },
-    { name: "Figure", icon: "🤖", description: "Action figures, anime scale models, and Gundam kits." },
-    { name: "Buku", icon: "📚", description: "Physical reading books, novels, mangas, and reference collections." },
-    { name: "Ebook", icon: "📖", description: "Digital library: PDF guides, documentation, and references." },
-    { name: "E-reader", icon: "📱", description: "Electronic reading hardware like Kindle, Kobo, or e-paper pads." },
-    { name: "SSD", icon: "💾", description: "Solid state drives, high-speed NVMe modules, and backup drives." },
-    { name: "Flashdisk", icon: "🔌", description: "USB flash drives, memory cards, and card-reader attachments." },
-    { name: "DVD", icon: "💿", description: "Vintage CDs, music DVD folders, and gaming installation disks." },
-    { name: "Simcard", icon: "📶", description: "Active or vintage telecom SIMs, carrier setups, and eSIM details." }
-  ];
-
-  const result = await Swal.fire({
-    title: 'Seed Default Categories?',
-    text: "This will add 13 typical Mancave categories (Gadget Lama, Keyboard, PC, Figure, SSD, etc.) to your catalog.",
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#00f2fe',
-    cancelButtonColor: 'rgba(255,255,255,0.08)',
-    background: '#0b1320',
-    color: '#f1f5f9',
-    confirmButtonText: 'Yes, seed them!'
-  });
-
-  if (result.isConfirmed) {
-    Swal.fire({
-      title: 'Seeding Categories...',
-      html: 'Populating Firestore document collections...',
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-      background: '#0b1320',
-      color: '#f1f5f9'
-    });
-
-    try {
-      const batch = db.batch();
-      defaultCategories.forEach(cat => {
-        const docRef = db.collection('categories').doc();
-        batch.set(docRef, {
-          ...cat,
-          userId: currentUser.uid,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      });
-
-      await batch.commit();
-      Swal.close();
-      showToast('success', '13 default categories successfully added!');
-    } catch (error) {
-      console.error("Error seeding categories:", error);
-      Swal.close();
-      showToast('error', 'Could not complete category seeding.');
-    }
-  }
-}
-
-// Delete Category
-async function deleteCategory(id, name) {
-  // Check if items are using this category
-  const connectedItems = itemsList.filter(item => item.categoryId === id);
-  let warningText = "You won't be able to revert this!";
-  
-  if (connectedItems.length > 0) {
-    warningText = `Warning: There are ${connectedItems.length} items in this category. Deleting it will also delete those items!`;
-  }
-
-  const result = await Swal.fire({
-    title: `Delete "${name}"?`,
-    text: warningText,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#ef4444',
-    cancelButtonColor: 'rgba(255,255,255,0.08)',
-    background: '#0b1320',
-    color: '#f1f5f9',
-    confirmButtonText: 'Yes, delete it!'
-  });
-
-  if (result.isConfirmed) {
-    try {
-      // Batch deletion to include dependent items
-      const batch = db.batch();
-      
-      // Delete Category document
-      batch.delete(db.collection('categories').doc(id));
-      
-      // Delete all items under this category
-      connectedItems.forEach(item => {
-        batch.delete(db.collection('items').doc(item.id));
-      });
-
-      await batch.commit();
-      showToast('success', 'Category and its collections deleted.');
-    } catch (error) {
-      console.error("Error deleting category & items:", error);
-      showToast('error', 'Could not complete deletion.');
-    }
-  }
 }
 
 // 8. ITEM CRUD ACTIONS
@@ -551,7 +317,7 @@ function filterItems() {
 
   // 2. Category filter
   if (categoryFilter) {
-    filtered = filtered.filter(item => item.categoryId === categoryFilter);
+    filtered = filtered.filter(item => item.category === categoryFilter);
   }
 
   // 3. Status filter
@@ -597,10 +363,7 @@ function filterItems() {
   }
 
   container.innerHTML = filtered.map(item => {
-    const category = categoriesList.find(c => c.id === item.categoryId);
-    const categoryName = category ? category.name : 'Uncategorized';
-    const categoryIcon = category ? category.icon : '📦';
-    
+    const categoryName = item.category || 'Uncategorized';
     const formattedPrice = formatCurrency(item.price);
     const ratingStars = renderStarsHTML(item.rating);
     const defaultImage = getFallbackImage(categoryName);
@@ -614,7 +377,7 @@ function filterItems() {
             ${item.status}
           </span>
           <span class="item-badge-category">
-            ${categoryIcon} ${escapeHTML(categoryName)}
+            <i class="fa-solid fa-tag"></i> ${escapeHTML(categoryName)}
           </span>
         </div>
         
@@ -643,18 +406,6 @@ function filterItems() {
 }
 
 function openAddItemModal() {
-  if (categoriesList.length === 0) {
-    Swal.fire({
-      icon: 'info',
-      title: 'Create Category First',
-      text: 'You need to create at least one category before registering collection items!',
-      background: '#0b1320',
-      color: '#f1f5f9',
-      confirmButtonColor: '#00f2fe'
-    });
-    return;
-  }
-  
   document.getElementById('item-id').value = '';
   document.getElementById('item-form').reset();
   
@@ -673,7 +424,7 @@ function openEditItemModal(id) {
   document.getElementById('item-id').value = item.id;
   document.getElementById('item-name').value = item.name;
   document.getElementById('item-brand').value = item.brand || '';
-  document.getElementById('item-category').value = item.categoryId;
+  document.getElementById('item-category').value = item.category || '';
   document.getElementById('item-status').value = item.status;
   document.getElementById('item-price').value = item.price || '';
   document.getElementById('item-purchase-date').value = item.purchaseDate || '';
@@ -716,7 +467,7 @@ document.getElementById('item-form').addEventListener('submit', async (e) => {
   const id = document.getElementById('item-id').value;
   const name = document.getElementById('item-name').value.trim();
   const brand = document.getElementById('item-brand').value.trim();
-  const categoryId = document.getElementById('item-category').value;
+  const category = document.getElementById('item-category').value;
   const status = document.getElementById('item-status').value;
   const price = parseFloat(document.getElementById('item-price').value) || 0;
   const purchaseDate = document.getElementById('item-purchase-date').value;
@@ -730,7 +481,7 @@ document.getElementById('item-form').addEventListener('submit', async (e) => {
   const itemData = {
     name,
     brand,
-    categoryId,
+    category,
     status,
     price,
     purchaseDate,
@@ -787,10 +538,7 @@ function viewItemDetail(id) {
   const item = itemsList.find(i => i.id === id);
   if (!item) return;
 
-  const category = categoriesList.find(c => c.id === item.categoryId);
-  const categoryName = category ? category.name : 'Uncategorized';
-  const categoryIcon = category ? category.icon : '📦';
-  
+  const categoryName = item.category || 'Uncategorized';
   const defaultImage = getFallbackImage(categoryName);
   const finalImage = item.imageUrl || defaultImage;
   const ratingStars = renderStarsHTML(item.rating);
@@ -818,7 +566,7 @@ function viewItemDetail(id) {
       <div class="detail-stats-grid">
         <div class="detail-stat-box">
           <span class="label">Category</span>
-          <span class="val">${categoryIcon} ${escapeHTML(categoryName)}</span>
+          <span class="val"><i class="fa-solid fa-tag"></i> ${escapeHTML(categoryName)}</span>
         </div>
         <div class="detail-stat-box">
           <span class="label">Purchase Value</span>
@@ -853,10 +601,11 @@ function viewItemDetail(id) {
 
 // 9. DASHBOARD METRICS AND VISUALIZATION
 function updateDashboardStats() {
-  const totalCategories = categoriesList.length;
+  // Count how many categories have at least 1 item
+  const totalCategories = new Set(itemsList.map(item => item.category).filter(Boolean)).size;
   const totalItems = itemsList.length;
   
-  // Calculate valuation (only include items that aren't wishlist, or include everything? Typically count displays/use)
+  // Calculate valuation (only include items that aren't wishlist)
   const totalValuation = itemsList
     .filter(item => item.status !== 'Wishlist')
     .reduce((sum, item) => sum + (item.price || 0), 0);
@@ -890,9 +639,7 @@ function updateRecentItemsTable() {
   }).slice(0, 5); // Take top 5
 
   tbody.innerHTML = sorted.map(item => {
-    const category = categoriesList.find(c => c.id === item.categoryId);
-    const categoryName = category ? category.name : 'Uncategorized';
-    const categoryIcon = category ? category.icon : '📦';
+    const categoryName = item.category || 'Uncategorized';
     
     return `
       <tr style="cursor: pointer;" onclick="viewItemDetail('${item.id}')">
@@ -902,7 +649,7 @@ function updateRecentItemsTable() {
             <span>${escapeHTML(item.name)}</span>
           </div>
         </td>
-        <td>${categoryIcon} ${escapeHTML(categoryName)}</td>
+        <td><i class="fa-solid fa-tag" style="font-size:0.8rem; opacity:0.7;"></i> ${escapeHTML(categoryName)}</td>
         <td>
           <span class="status-badge status-${item.status.toLowerCase().replace(/ /g, '-')}">
             ${item.status}
@@ -918,16 +665,11 @@ function updateDashboardChart() {
   const ctx = document.getElementById('categoryChart');
   if (!ctx) return;
 
-  // Aggregate items count per category
+  // Aggregate items count per category (only include categories that have count > 0 for a clean chart)
   const categoryCounts = {};
-  categoriesList.forEach(c => {
-    categoryCounts[c.name] = 0;
-  });
-
   itemsList.forEach(item => {
-    const category = categoriesList.find(c => c.id === item.categoryId);
-    if (category) {
-      categoryCounts[category.name] = (categoryCounts[category.name] || 0) + 1;
+    if (item.category) {
+      categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
     }
   });
 
