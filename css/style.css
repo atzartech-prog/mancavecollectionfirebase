@@ -1130,6 +1130,13 @@ button, input, select, textarea {
   overflow: hidden;
 }
 
+.modal-card form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
 .modal-lg {
   max-width: 680px;
 }
